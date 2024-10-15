@@ -199,6 +199,45 @@ class TestEvaluations(unittest.TestCase):
             [sorted(d.items()) for d in list2],
         )
 
+    def test_get_logs(self):
+        project = "test_project_get_logs"
+        
+        if project in unify.list_projects():
+            unify.delete_project(project)
+        unify.create_project(project)
+
+        # Initially, no logs should exist in the project
+        logs = unify.get_logs(project)
+        assert len(logs) == 0, "There should be no logs initially."
+
+        log_data1 = {
+            "system_prompt": "You are a weather assistant",
+            "user_prompt": "What is the weather today?",
+            "score": 0.9,
+        }
+        log1 = unify.log(project=project, **log_data1)
+
+        log_data2 = {
+            "system_prompt": "You are a travel assistant",
+            "user_prompt": "What is the best route to the airport?",
+            "score": 0.7,
+        }
+        log2 = unify.log(project=project, **log_data2)
+
+        logs = unify.get_logs(project)
+        assert len(logs) == 2, "There should be 2 logs in the project."
+        assert logs[0].entries == log1.entries or logs[1].entries == log1.entries, \
+            "The first log should match the first log entries."
+        assert logs[0].entries == log2.entries or logs[1].entries == log2.entries, \
+            "The second log should match the second log entries."
+        filtered_logs = unify.get_logs(project, filter="'weather' in user_prompt")
+        assert len(filtered_logs) == 1, "There should be 1 log with 'weather' in the user prompt."
+        assert filtered_logs[0].entries.get("user_prompt") == log_data1["user_prompt"], \
+            "The filtered log should be the one that asks about the weather."
+        nonexistent_logs = unify.get_logs(project, filter="'nonexistent' in user_prompt")
+        assert len(nonexistent_logs) == 0, "There should be no logs matching the nonexistent filter."
+        unify.delete_project(project)
+
 
 class TestAsyncEvaluations(unittest.IsolatedAsyncioTestCase):
     async def test_contextual_logging_async(self):
