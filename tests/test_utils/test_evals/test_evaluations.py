@@ -201,7 +201,7 @@ class TestEvaluations(unittest.TestCase):
 
     def test_get_logs(self):
         project = "test_project_get_logs"
-        
+
         if project in unify.list_projects():
             unify.delete_project(project)
         unify.create_project(project)
